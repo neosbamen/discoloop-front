@@ -53,15 +53,21 @@
   margin-top: 40px;
 }
 
-.nav-list a {
+.nav-list button {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
   padding: 10px 12px;
+  border: 0;
   border-radius: 8px;
+  background: transparent;
   color: #d8dee8;
-  text-decoration: none;
   font-size: 14px;
+  cursor: pointer;
 }
 
-.nav-list a:hover {
+.nav-list button:hover,
+.nav-list button.active {
   background: #1f232c;
   color: #ffffff;
 }
@@ -133,31 +139,52 @@ h3 {
   font-size: 13px;
 }
 
-.featured-panel {
-  display: flex;
-  justify-content: space-between;
-  gap: 32px;
+.overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px 180px;
+  gap: 16px;
   margin: 32px 0;
+}
+
+.summary-card {
   padding: 24px;
   border: 1px solid #dfe3e8;
   border-radius: 8px;
   background: #ffffff;
 }
 
-.featured-panel > div {
-  max-width: 520px;
+.summary-card h2 {
+  max-width: 620px;
+  margin-bottom: 12px;
 }
 
-.featured-panel > p {
+.summary-card p {
   max-width: 420px;
   color: #667085;
 }
 
-.track-section {
+.summary-card.compact {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+.summary-card.compact span {
+  color: #111318;
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.panel-section {
   padding: 24px;
   border: 1px solid #dfe3e8;
   border-radius: 8px;
   background: #ffffff;
+}
+
+.panel-section + .panel-section {
+  margin-top: 24px;
 }
 
 .section-heading {
@@ -184,6 +211,66 @@ h3 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
+}
+
+.dj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.dj-card {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.dj-avatar {
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #20242d;
+  color: #3ddc97;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.dj-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dj-info {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.dj-info p {
+  color: #667085;
+  font-size: 13px;
+}
+
+.dj-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dj-links a {
+  color: #111318;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .track-card {
@@ -239,47 +326,74 @@ audio {
   height: 36px;
 }
 
-.play-button {
-  min-height: 38px;
-  border: 0;
-  border-radius: 8px;
-  background: #111318;
-  color: #ffffff;
-  font-weight: 700;
-  cursor: pointer;
+.player-row {
+  display: grid;
+  gap: 6px;
 }
 
-.play-button:hover {
-  background: #27303b;
-}
-
-.play-button:disabled {
-  cursor: wait;
-  opacity: 0.72;
+.player-row span {
+  color: #667085;
+  font-size: 12px;
 }
 
 @media (max-width: 840px) {
   .app-shell {
     grid-template-columns: 1fr;
+    padding-bottom: 78px;
   }
 
   .sidebar {
-    position: static;
-    height: auto;
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 20;
+    height: 72px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid #262b35;
+    border-right: 0;
   }
 
   .nav-list {
+    display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin-top: 20px;
+    gap: 6px;
+    margin-top: 0;
+  }
+
+  .nav-list button {
+    min-height: 48px;
+    justify-content: center;
+    padding: 8px;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brand-mark {
+    width: 40px;
+    height: 40px;
+  }
+
+  .brand div {
+    display: none;
   }
 
   .content {
-    padding: 20px;
+    padding: 18px;
   }
 
-  .topbar,
-  .featured-panel {
+  .topbar {
     flex-direction: column;
+  }
+
+  .overview-grid {
+    grid-template-columns: 1fr;
   }
 
   .stats {
@@ -287,11 +401,49 @@ audio {
   }
 
   h1 {
-    font-size: 32px;
+    font-size: 30px;
   }
 }
 
 @media (max-width: 520px) {
+  .content {
+    padding: 14px;
+  }
+
+  .topbar {
+    gap: 16px;
+  }
+
+  .stats span,
+  .meta-row span {
+    font-size: 12px;
+  }
+
+  .overview-grid {
+    margin: 20px 0;
+    gap: 10px;
+  }
+
+  .summary-card,
+  .panel-section {
+    padding: 16px;
+  }
+
+  .dj-grid,
+  .track-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dj-card {
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
+
+  .dj-avatar {
+    width: 58px;
+    height: 58px;
+    font-size: 16px;
+  }
+
   .track-card {
     grid-template-columns: 1fr;
   }

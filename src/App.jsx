@@ -27,9 +27,12 @@ function formatDuration(seconds) {
 
 function App() {
   const [tracks, setTracks] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [djs, setDjs] = useState([])
+  const [loadingTracks, setLoadingTracks] = useState(true)
+  const [loadingDjs, setLoadingDjs] = useState(true)
   const [error, setError] = useState('')
-  const [playingTrackId, setPlayingTrackId] = useState(null)
+  const [registeringTrackId, setRegisteringTrackId] = useState(null)
+  const [activeView, setActiveView] = useState('tracks')
 
   const totalPlays = useMemo(
     () => tracks.reduce((total, track) => total + track.playCount, 0),
@@ -37,28 +40,38 @@ function App() {
   )
 
   useEffect(() => {
-    async function loadPublishedTracks() {
+    async function loadDashboardData() {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/tracks/published`)
+        const [tracksResponse, djsResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/tracks/published`),
+          fetch(`${API_BASE_URL}/api/djs`),
+        ])
 
-        if (!response.ok) {
+        if (!tracksResponse.ok) {
           throw new Error('No se pudieron cargar los tracks publicados.')
         }
 
-        const data = await response.json()
-        setTracks(data)
+        if (!djsResponse.ok) {
+          throw new Error('No se pudieron cargar los DJs.')
+        }
+
+        const [tracksData, djsData] = await Promise.all([tracksResponse.json(), djsResponse.json()])
+
+        setTracks(tracksData)
+        setDjs(djsData)
       } catch (requestError) {
         setError(requestError.message)
       } finally {
-        setLoading(false)
+        setLoadingTracks(false)
+        setLoadingDjs(false)
       }
     }
 
-    loadPublishedTracks()
+    loadDashboardData()
   }, [])
 
   async function handlePlay(trackId) {
-    setPlayingTrackId(trackId)
+    setRegisteringTrackId(trackId)
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/tracks/${trackId}/play`, {
@@ -76,7 +89,7 @@ function App() {
     } catch (requestError) {
       setError(requestError.message)
     } finally {
-      setPlayingTrackId(null)
+      setRegisteringTrackId(null)
     }
   }
 
@@ -92,9 +105,27 @@ function App() {
         </div>
 
         <nav className="nav-list" aria-label="Principal">
-          <a href="#tracks">Tracks</a>
-          <a href="#activity">Actividad</a>
-          <a href="#library">Biblioteca</a>
+          <button
+            className={activeView === 'tracks' ? 'active' : ''}
+            type="button"
+            onClick={() => setActiveView('tracks')}
+          >
+            <span>Tracks</span>
+          </button>
+          <button
+            className={activeView === 'djs' ? 'active' : ''}
+            type="button"
+            onClick={() => setActiveView('djs')}
+          >
+            <span>DJs</span>
+          </button>
+          <button
+            className={activeView === 'activity' ? 'active' : ''}
+            type="button"
+            onClick={() => setActiveView('activity')}
+          >
+            <span>Actividad</span>
+          </button>
         </nav>
       </aside>
 
@@ -106,72 +137,132 @@ function App() {
           </div>
           <div className="stats">
             <span>{tracks.length} tracks</span>
+            <span>{djs.length} DJs</span>
             <span>{totalPlays} plays</span>
           </div>
         </header>
 
-        <section className="featured-panel" id="activity">
-          <div>
-            <p className="eyebrow">DiscoLoop local</p>
-            <h2>Tu backend ya esta sirviendo musica desde Spring Boot.</h2>
-          </div>
-          <p>
-            Esta vista lee los tracks publicados, reproduce el audio local y actualiza el contador de plays.
-          </p>
-        </section>
+        {activeView === 'activity' && (
+          <section className="overview-grid">
+            <article className="summary-card">
+              <p className="eyebrow">DiscoLoop local</p>
+              <h2>Tu backend ya esta sirviendo musica desde Spring Boot.</h2>
+              <p>Esta vista lee tracks publicados, perfiles DJ y actualiza el contador de plays.</p>
+            </article>
 
-        <section className="track-section" id="tracks">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Catalogo</p>
-              <h2>Tracks publicados</h2>
+            <article className="summary-card compact">
+              <span>{tracks.length}</span>
+              <p>Tracks publicados</p>
+            </article>
+
+            <article className="summary-card compact">
+              <span>{djs.length}</span>
+              <p>DJs activos</p>
+            </article>
+          </section>
+        )}
+
+        {activeView === 'djs' && (
+          <section className="panel-section">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Comunidad</p>
+                <h2>DJs en DiscoLoop</h2>
+              </div>
             </div>
-          </div>
 
-          {loading && <p className="state-message">Cargando tracks publicados...</p>}
-          {error && <p className="state-message error">{error}</p>}
-          {!loading && !error && tracks.length === 0 && (
-            <p className="state-message">Todavia no hay tracks publicados.</p>
-          )}
+            {loadingDjs && <p className="state-message">Cargando DJs...</p>}
+            {error && <p className="state-message error">{error}</p>}
+            {!loadingDjs && !error && djs.length === 0 && (
+              <p className="state-message">Todavia no hay DJs registrados.</p>
+            )}
 
-          <div className="track-grid">
-            {tracks.map((track) => (
-              <article className="track-card" key={track.id}>
-                <div className="cover-art">
-                  {track.coverImageUrl ? (
-                    <img src={track.coverImageUrl} alt={`Cover de ${track.title}`} />
-                  ) : (
-                    <span>{track.title.slice(0, 2).toUpperCase()}</span>
-                  )}
-                </div>
-
-                <div className="track-info">
-                  <div>
-                    <p className="genre">{track.genre || 'Sin genero'}</p>
-                    <h3>{track.title}</h3>
-                    <p className="muted">{track.djStageName || 'DJ sin nombre'}</p>
+            <div className="dj-grid">
+              {djs.map((dj) => (
+                <article className="dj-card" key={dj.id}>
+                  <div className="dj-avatar">
+                    {dj.photoUrl ? (
+                      <img src={dj.photoUrl} alt={`Foto de ${dj.stageName}`} />
+                    ) : (
+                      <span>{dj.stageName.slice(0, 2).toUpperCase()}</span>
+                    )}
                   </div>
 
-                  <div className="meta-row">
-                    <span>{formatDuration(track.durationSeconds)}</span>
-                    <span>{track.playCount} plays</span>
+                  <div className="dj-info">
+                    <h3>{dj.stageName}</h3>
+                    <p>{dj.bio || 'Perfil DJ sin bio por ahora.'}</p>
+                    <div className="dj-links">
+                      {dj.instagramUrl && (
+                        <a href={dj.instagramUrl} target="_blank" rel="noreferrer">
+                          Instagram
+                        </a>
+                      )}
+                      {dj.soundcloudUrl && (
+                        <a href={dj.soundcloudUrl} target="_blank" rel="noreferrer">
+                          SoundCloud
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {activeView === 'tracks' && (
+          <section className="panel-section">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Catalogo</p>
+                <h2>Tracks publicados</h2>
+              </div>
+            </div>
+
+            {loadingTracks && <p className="state-message">Cargando tracks publicados...</p>}
+            {error && <p className="state-message error">{error}</p>}
+            {!loadingTracks && !error && tracks.length === 0 && (
+              <p className="state-message">Todavia no hay tracks publicados.</p>
+            )}
+
+            <div className="track-grid">
+              {tracks.map((track) => (
+                <article className="track-card" key={track.id}>
+                  <div className="cover-art">
+                    {track.coverImageUrl ? (
+                      <img src={track.coverImageUrl} alt={`Cover de ${track.title}`} />
+                    ) : (
+                      <span>{track.title.slice(0, 2).toUpperCase()}</span>
+                    )}
                   </div>
 
-                  <audio controls src={buildAudioUrl(track.audioUrl)} preload="none" />
+                  <div className="track-info">
+                    <div>
+                      <p className="genre">{track.genre || 'Sin genero'}</p>
+                      <h3>{track.title}</h3>
+                      <p className="muted">{track.djStageName || 'DJ sin nombre'}</p>
+                    </div>
 
-                  <button
-                    className="play-button"
-                    type="button"
-                    onClick={() => handlePlay(track.id)}
-                    disabled={playingTrackId === track.id}
-                  >
-                    {playingTrackId === track.id ? 'Registrando...' : 'Play'}
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+                    <div className="meta-row">
+                      <span>{formatDuration(track.durationSeconds)}</span>
+                      <span>{track.playCount} plays</span>
+                    </div>
+
+                    <div className="player-row">
+                      <audio
+                        controls
+                        src={buildAudioUrl(track.audioUrl)}
+                        preload="none"
+                        onPlay={() => handlePlay(track.id)}
+                      />
+                      {registeringTrackId === track.id && <span>Registrando play...</span>}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
       </section>
     </main>
   )
